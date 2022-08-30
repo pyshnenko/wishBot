@@ -4,8 +4,12 @@ const { Telegraf } = require('telegraf');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const Markup = require("telegraf/markup.js");
     
-const url = "mongodb://spamigor.site:27017/";
-const mongoClient = new MongoClient(url);
+const url = "spamigor.site:27017";
+const username = encodeURIComponent(process.env.LOGIN);
+const password = encodeURIComponent(process.env.PASS);
+const authMechanism = "DEFAULT";
+const uri =`mongodb://${username}:${password}@${url}/?authMechanism=${authMechanism}`;
+const mongoClient = new MongoClient(uri);
 
 let userIdBuffer = {
 	id: [],
