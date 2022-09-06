@@ -10,6 +10,9 @@ const password = encodeURIComponent(process.env.PASS);
 const authMechanism = "DEFAULT";
 const uri =`mongodb://${username}:${password}@${url}/?authMechanism=${authMechanism}`;
 const mongoClient = new MongoClient(uri);
+const WebSocketClient = require('websocket').client;
+const socketPort = '8080/';
+let client = new WebSocketClient();
 
 let userIdBuffer = {
 	id: [],
@@ -650,3 +653,41 @@ function saveWish(id, name, price, url, pictId) {
 
 process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
+
+client.on('connectFailed', function(error) {
+    console.log('Connect Error: ' + error.toString());
+	setTimeout(() => {
+		console.log('reconnect');
+		client.connect('wss://spamigor.site:' + socketPort, 'echo-protocol');
+	}, 60*1000)
+});
+
+client.on('connect', function(connection) {
+    console.log('WebSocket Client Connected');
+    connection.on('error', function(error) {
+        console.log("Connection Error: " + error.toString());
+    });
+    connection.on('close', function() {
+        console.log('echo-protocol Connection Closed');
+		setTimeout(() => {
+			console.log('reconnect');
+			client.connect('wss://spamigor.site:' + socketPort, 'echo-protocol');
+		}, 60*1000)
+    });
+    connection.on('message', function(message) {
+        if (message.type === 'utf8') {
+			console.log("Received: '" + message.utf8Data + "'");
+        }
+    });
+    
+    function sendNumber() {
+        if (connection.connected) {
+            var number = new Date();
+            connection.sendUTF('wi: ' + (Number(number)).toString());
+            setTimeout(sendNumber, 60*1000);
+        }
+    }
+    sendNumber();
+});
+
+client.connect('wss://spamigor.site:' + socketPort, 'echo-protocol');
